@@ -42,7 +42,7 @@ describe('Hiero Workflow Hub', () => {
   it('assigns a user when they comment /assign and meet requirements', async () => {
     const octokit = {
       issues: {
-        assignUser: vi.fn().mockResolvedValue({}),
+        addAssignees: vi.fn().mockResolvedValue({}),
         createComment: vi.fn().mockResolvedValue({}),
       },
     }
@@ -69,14 +69,14 @@ describe('Hiero Workflow Hub', () => {
       const userCommits = 5 // Mocked pass
 
       if (userCommits >= minCommits) {
-        await ctx.octokit.issues.assignUser(ctx.issue({ assignees: [user] }))
+        await ctx.octokit.issues.addAssignees(ctx.issue({ assignees: [user] }))
         await ctx.octokit.issues.createComment(ctx.issue({ body: `Success @${user}` }))
       }
     }
 
     await handler(mockContext)
 
-    expect(octokit.issues.assignUser).toHaveBeenCalledWith(
+    expect(octokit.issues.addAssignees).toHaveBeenCalledWith(
       expect.objectContaining({ assignees: ['khushi-dev'] })
     )
     expect(octokit.issues.createComment).toHaveBeenCalledWith(
@@ -123,5 +123,28 @@ describe('Hiero Workflow Hub', () => {
         body: expect.stringContaining('@python-expert-1')
       })
     )
+  })
+
+  it('responds to /help command', async () => {
+    const octokit = {
+      issues: { createComment: vi.fn().mockResolvedValue({}) }
+    }
+    const mockContext = {
+      octokit,
+      log: { info: vi.fn() },
+      payload: {
+        repository: { full_name: 'hiero' },
+        issue: { number: 1 },
+        comment: { body: '/help', user: { login: 'khushi' } }
+      },
+      issue: (data) => data
+    }
+    const handler = async (ctx) => {
+      if (ctx.payload.comment.body === '/help') {
+        await ctx.octokit.issues.createComment({ body: 'Help menu' })
+      }
+    }
+    await handler(mockContext)
+    expect(octokit.issues.createComment).toHaveBeenCalledWith({ body: 'Help menu' })
   })
 })

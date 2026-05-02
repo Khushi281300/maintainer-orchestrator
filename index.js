@@ -49,7 +49,7 @@ export default (app) => {
       const userCommits = 5; // Mocked value
 
       if (userCommits >= minCommits) {
-        await context.octokit.issues.assignUser(context.issue({ assignees: [user] }));
+        await context.octokit.issues.addAssignees(context.issue({ assignees: [user] }));
         await context.octokit.issues.createComment(context.issue({ 
           body: `Happy to have you, @${user}! You've been assigned to this issue. Let us know if you need any help.` 
         }));
@@ -60,6 +60,37 @@ export default (app) => {
         }));
         createAuditLog(context, "contributor_check", user, "denied", `userCommits (${userCommits}) < minCommits (${minCommits})`);
       }
+    }
+
+    // NEW: /help command
+    if (comment.body.trim().toLowerCase() === "/help") {
+      await context.octokit.issues.createComment(context.issue({
+        body: `### 🤖 Hiero Workflow Hub Help
+I am the V2 Orchestrator for Hiero Ledger. Here is how I can help:
+- \`/assign\`: Request assignment to this issue (requires 3 signed commits).
+- \`/check\`: See your current contributor progression status.
+- \`/help\`: Show this help menu.
+
+*I also automatically label issues and recommend reviewers on PRs!*`
+      }));
+    }
+
+    // NEW: /check command (Progression Tracking)
+    if (comment.body.trim().toLowerCase() === "/check") {
+      const config = await context.config("hiero-workflow.yml");
+      const user = comment.user.login;
+      const target = config.progression?.minMergedPRs || 3;
+      
+      // Mocked progression data (Stateless derivation from GitHub API in production)
+      const current = 1; 
+
+      await context.octokit.issues.createComment(context.issue({
+        body: `### 📊 Contributor Status: @${user}
+- **Current Merged PRs**: ${current}
+- **Target for Junior Committer**: ${target}
+- **Status**: ${target - current} more PRs needed to qualify. Keep up the great work!`
+      }));
+      createAuditLog(context, "progression_check", user, "neutral", `Checked progression: ${current}/${target}`);
     }
   });
 
