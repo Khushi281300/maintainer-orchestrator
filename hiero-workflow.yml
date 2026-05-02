@@ -1,0 +1,19 @@
+autoLabel:
+  onNewIssue: ["status/triage", "hiero/community"]
+  onNewPR: ["status/review-needed"]
+
+contributor_check:
+  enabled: true
+  min_commits: 3
+  require_signed_commits: true
+
+progression:
+  enableJCCheck: true
+  minMergedPRs: 3
+
+reviewer_recommendation:
+  enabled: true
+  expert_map:
+    "src/python/**": ["@python-expert-1", "@python-expert-2"]
+    "src/js/**": ["@js-maintainer-A"]
+    "docs/**": ["@docs-lead"]
